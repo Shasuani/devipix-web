@@ -51,6 +51,14 @@
   --font-term:"VT323", ui-monospace, monospace;
   --font-body:"IBM Plex Mono", ui-monospace, monospace;
 }
+/* amber phosphor theme (the `theme` command) */
+.theme-amber{
+  --green:#ffb000; --green-dim:#b3760a; --green-faint:#5c3f05;
+  --amber:#33ff66;
+  --tube:#120c02; --tube-edge:#0a0701;
+  --glow-green:0 0 6px rgba(255,176,0,.55), 0 0 20px rgba(255,176,0,.18);
+  --glow-amber:0 0 6px rgba(51,255,102,.55), 0 0 18px rgba(51,255,102,.18);
+}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{
@@ -411,7 +419,7 @@ var CONFIG = {
   var typed=document.getElementById('typed'), input=document.getElementById('cmd');
   var winLayer=document.getElementById('windows');
   var history=[], hIdx=0, aiMode=false, aiHistory=[], soundOn=false, audio=null, winZ=10, winCount=0;
-  var COMMANDS=['services','projects','about','contact','ask','help','clear','exit'];
+  var COMMANDS=['services','projects','about','contact','ask','help','clear','exit','theme'];
 
   function el(cls,html){var d=document.createElement('div');d.className='out-line'+(cls?' '+cls:'');d.innerHTML=html;out.appendChild(d);term.scrollTop=term.scrollHeight;return d;}
   function print(html,cls){return el(cls,html);}
@@ -553,7 +561,7 @@ var CONFIG = {
   var HANDLERS={
     help:function(){print('AVAILABLE COMMANDS','amber');
       print('  services   projects   about   contact');
-      print('  ask &lt;question&gt;   help   clear   exit');
+      print('  ask &lt;question&gt;   help   clear   exit   theme   snd on|off');
       print('  <span class="dim">history: &uarr;/&darr; &middot; autocomplete: Tab &middot; close/exit: ESC</span>');},
     services:function(){openWindow('services');},
     projects:function(){openWindow('projects');},
@@ -562,6 +570,9 @@ var CONFIG = {
     clear:function(){out.innerHTML='';},
     ask:function(arg){if(arg){aiReply(arg);}else{setAI(true);}},
     exit:function(){if(aiMode)setAI(false);else print('Nothing to exit.','dim');},
+    theme:function(){document.documentElement.classList.toggle('theme-amber');
+      print('Phosphor theme toggled.'+(document.documentElement.classList.contains('theme-amber')?' (amber)':' (green)'),'amber');},
+    snd:function(arg){soundOn=(arg||'').toLowerCase()==='on';print('Sound '+(soundOn?'ON':'OFF')+'.','dim');if(soundOn)beep();},
     whoami:function(){print('guest@devipix &mdash; a potential client with good taste.');},
     ls:function(){print('services.md  projects/  about.txt  contact.form  <span class="dim">.vault</span>');},
     'cat .vault':function(){print('ACCESSING .vault ...','dim');setTimeout(function(){print('&#9888; ACCESS DENIED &mdash; nice try. Lockout engaged for 0.0 seconds.','err');},350);},
@@ -612,7 +623,11 @@ var CONFIG = {
   });
 
   /* ---- GO ---- */
-  type(boot,function(){row.hidden=false;render();focusInput();});
+  type(boot,function(){row.hidden=false;render();focusInput();
+    // deep links: #services / #projects / #about / #contact open on load
+    var h=(location.hash||'').replace('#','');
+    if(['services','projects','about','contact'].indexOf(h)!==-1)openWindow(h);
+  });
 
   /* expose for debug panel */
   window.__devipix={winCount:function(){return winLayer.querySelectorAll('.window').length;},aiMode:function(){return aiMode;}};
@@ -622,9 +637,9 @@ var CONFIG = {
    Debug panel
    ========================================================================= */
 (function(){
-  var BUILD={phase:"3–4",name:"popup windows + content panels",
-    done:["popup windows","draggable/bottom-sheet","4 content windows","pixel project cards","contact form (mailto)"],
-    next:"Phase 5 — favicon + brand assets"};
+  var BUILD={phase:"3–10 (feature-complete)",name:"windows, content, AI, form, SEO, polish",
+    done:["popup windows","draggable/bottom-sheet","4 content windows","pixel project cards","AI wiring","contact form","favicon+OG","JSON-LD Org","theme cmd","sounds toggle","deep links"],
+    next:"Fill CONFIG + placeholders, then deploy (DEPLOY.md)"};
   var btn=document.getElementById('dbgBtn'),box=document.getElementById('dbg');
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function render(){

@@ -482,8 +482,16 @@ var CONFIG = {
   function aiReply(q){
     aiHistory.push({role:'user',content:q});if(aiHistory.length>12)aiHistory=aiHistory.slice(-12);
     var proc=print('PROCESSING...','dim');
-    setTimeout(function(){proc.remove();
-      print('[ AI co-processor is a live demo — the assistant gets wired up in a later step. Projects are quoted individually; tap CONTACT to start one. ]','ai-reply');},400);
+    if(!CONFIG.AI_ENDPOINT){
+      setTimeout(function(){proc.remove();
+        print('[ AI is not wired yet. Add your Cloudflare Worker URL to CONFIG.AI_ENDPOINT (see DEPLOY.md). Projects are quoted individually &mdash; tap CONTACT to start one. ]','ai-reply');},400);
+      return;
+    }
+    fetch(CONFIG.AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:aiHistory})})
+      .then(function(r){return r.json();})
+      .then(function(d){proc.remove();var txt=(d&&d.reply)?d.reply:'[ No response. ]';
+        aiHistory.push({role:'assistant',content:txt});print(esc(txt),'ai-reply');})
+      .catch(function(){proc.remove();print('[ AI transmission failed. Try again, or tap CONTACT. ]','err');});
   }
 
   /* ---- FORM ---- */

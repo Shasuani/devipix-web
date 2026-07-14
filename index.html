@@ -502,9 +502,18 @@ var CONFIG = {
       var email=f.querySelector('[name=email]').value.trim();
       var msg=f.querySelector('[name=message]').value.trim();
       if(!name||!email||!msg){statusEl.textContent='All fields required.';return;}
-      var body=encodeURIComponent('From: '+name+' <'+email+'>\n\n'+msg);
-      window.location.href='mailto:'+CONFIG.CONTACT_EMAIL+'?subject='+encodeURIComponent('New project — '+name)+'&body='+body;
-      statusEl.textContent='Opening your email client…';
+      if(CONFIG.FORMSPREE_ID){
+        statusEl.textContent='Transmitting...';
+        fetch('https://formspree.io/f/'+CONFIG.FORMSPREE_ID,{method:'POST',headers:{'Accept':'application/json'},
+          body:new FormData(f)}).then(function(r){
+            if(r.ok){f.reset();statusEl.textContent='✓ Transmission received. We’ll reply within one business day.';}
+            else{statusEl.textContent='Something went wrong — email us at '+CONFIG.CONTACT_EMAIL+'.';}
+          }).catch(function(){statusEl.textContent='Network error — email us at '+CONFIG.CONTACT_EMAIL+'.';});
+      }else{
+        var body=encodeURIComponent('From: '+name+' <'+email+'>\n\n'+msg);
+        window.location.href='mailto:'+CONFIG.CONTACT_EMAIL+'?subject='+encodeURIComponent('New project — '+name)+'&body='+body;
+        statusEl.textContent='Opening your email client…';
+      }
     });
   }
 

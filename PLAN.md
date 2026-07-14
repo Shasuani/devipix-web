@@ -18,7 +18,7 @@ framework, no build step.
 |---|---|
 | **Color** | **Keep green phosphor** (#33FF66 primary, #1E9C43 dim, #12592A faint, amber #FFB000 accent, red #FF4E42 error). Unchanged from handoff. |
 | **Brand blue** | DeviPix blue (~#4A90E2 / gradient from logo) is the **secondary/off-terminal** color — OG image, favicon backing, future marketing. Not used inside the green tube. |
-| **Logo** | **Redesign toward a pixel-grid node mark**, rendered in **phosphor green** so it lives on the CRT. Keep proportions of the current mark (circular node/pin). Blue smooth version retained only for off-terminal use (OG/social). |
+| **Logo** | **Pixel Frame** mark (chosen) — a magnified hollow pixel + a spawning sub-pixel, rendered in **phosphor green**. Used in header, brand plate, favicon. Blue reserved for off-terminal (OG/social). |
 | **Voice** | **DeviPix studio voice** — "DeviPix builds…", honest for a one-person studio today, scales when hiring. No fake team size, no "just me" hedging. |
 | **Tech** | Single self-contained `index.html`, no frameworks/build. AI via Cloudflare Worker (key server-side). Deploy on Cloudflare Pages + Worker. |
 

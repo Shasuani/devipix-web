@@ -203,6 +203,22 @@ body{
 @keyframes power-on{0%{opacity:.9}12%{opacity:.6}100%{opacity:0}}
 @keyframes blink{50%{opacity:0}}
 
+/* ---- DEBUG PANEL --------------------------------------------------------- */
+.dbg-btn{position:fixed;top:10px;right:10px;z-index:50;width:34px;height:34px;
+  border-radius:8px;cursor:pointer;font-size:16px;color:var(--green);
+  background:#0b1e12;border:1px solid var(--green-faint);
+  box-shadow:0 2px 6px rgba(0,0,0,.6)}
+.dbg-btn:hover{color:#7dffa6}
+.dbg-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.dbg{position:fixed;top:52px;right:10px;z-index:50;width:240px;display:none;
+  font-family:var(--font-body);font-size:11.5px;line-height:1.7;color:var(--green-dim);
+  background:#08130b;border:1px solid var(--green-faint);border-radius:9px;padding:12px 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.7)}
+.dbg.open{display:block}
+.dbg h4{margin:0 0 8px;font-family:var(--font-term);font-size:16px;letter-spacing:.14em;color:var(--green)}
+.dbg b{color:var(--green)}
+.dbg .ok{color:var(--amber)}
+
 /* ---- RESPONSIVE ---------------------------------------------------------- */
 @media (max-width:640px){
   .monitor{border-radius:18px;padding:12px}
@@ -230,6 +246,9 @@ body{
     </g>
   </symbol>
 </svg>
+
+<button class="dbg-btn" id="dbgBtn" type="button" title="Debug" aria-label="Toggle debug panel">&#9881;</button>
+<aside class="dbg" id="dbg" aria-live="polite"></aside>
 
 <main class="monitor">
   <span class="screw tl"></span><span class="screw tr"></span>
@@ -292,6 +311,30 @@ body{
   }
   tick();
   setInterval(tick, 1000);
+})();
+
+/* debug panel — build/phase status. Toggle with the gear button or ?debug in the URL */
+(function(){
+  var BUILD = { phase: 1, name: "CRT shell + design system",
+    done: ["frame+screws","brand plate+LED","header clock","CRT effects","keycaps","Pixel Frame logo"],
+    next: "Phase 2 — terminal engine" };
+  var btn = document.getElementById('dbgBtn'), box = document.getElementById('dbg');
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function render(){
+    box.innerHTML =
+      '<h4>DEBUG</h4>'+
+      '<div>Phase: <b>'+BUILD.phase+'</b> — '+BUILD.name+'</div>'+
+      '<div>Built: <span class="ok">'+BUILD.done.length+'</span> items</div>'+
+      '<div style="color:var(--green-faint)">'+BUILD.done.join(' · ')+'</div>'+
+      '<div style="margin-top:6px">Next: <b>'+BUILD.next+'</b></div>'+
+      '<div style="margin-top:6px">Viewport: <b>'+innerWidth+'×'+innerHeight+'</b></div>'+
+      '<div>Reduced-motion: <b>'+(reduced?'ON':'off')+'</b></div>'+
+      '<div>AI endpoint: <b>not wired (Phase 6)</b></div>';
+  }
+  function toggle(){ box.classList.toggle('open'); if(box.classList.contains('open')) render(); }
+  btn.addEventListener('click', toggle);
+  if(/[?&]debug/.test(location.search)){ toggle(); }
+  addEventListener('resize', function(){ if(box.classList.contains('open')) render(); });
 })();
 </script>
 

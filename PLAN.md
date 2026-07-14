@@ -43,7 +43,7 @@ Track these — the site can be built with dummies, but launch is blocked until 
 - [ ] **LinkedIn** URL
 - [ ] **GitHub** URL
 - [ ] **Domain** (e.g. `devipix.com`) — for CORS lock + canonical/OG URLs
-- [ ] Real **project URLs** (Meridian Coffee, COOLFIX) + note that Ascend is in dev
+- [ ] Real **project URLs** (Meridian Coffee, Fedari) + note that Ascend is in dev
 - [ ] Real **project screenshots** (WebP) — see Phase 8
 - [ ] **Anthropic API key** (with a spend limit) — for the AI Worker
 - [ ] **Formspree form ID** (or chosen email route) — for the contact form
@@ -86,7 +86,7 @@ All content lives as real `<section>` elements in the DOM (positioned off-screen
 cloned into windows on open. Body text = IBM Plex Mono (not VT323).
 
 - [ ] 4.1 **SERVICES.MD**: 3 numbered boxes (01 Websites that convert / 02 Web & mobile apps / 03 AI tools & automation — reference the terminal's own AI as a live demo). "How it works": one conversation → fixed quote → build → launch. **DeviPix voice.**
-- [ ] 4.2 **~/PROJECTS**: 3 cards w/ pixel-art SVG thumbnails (crispEdges, glow): Meridian Coffee, COOLFIX (Dubai), Ascend (RPG habit app — mark IN DEVELOPMENT).
+- [ ] 4.2 **~/PROJECTS**: 3 cards w/ pixel-art SVG thumbnails (crispEdges, glow): Meridian Coffee, Fedari (Dubai), Ascend (RPG habit app — mark IN DEVELOPMENT).
 - [ ] 4.3 **ABOUT.TXT**: DeviPix studio blurb (based in Greece, full stack, direct access to the person building it, cares about the last 5%). Quick-facts rows: location / stack (JS/TS, React, Node, Python) / focus / style.
 - [ ] 4.4 **CONTACT — NEW TRANSMISSION**: themed form (CALLSIGN/NAME, RETURN FREQUENCY/EMAIL, TRANSMISSION textarea, `▸ TRANSMIT`), direct links row, `STATUS: AVAILABLE FOR NEW PROJECTS`.
 - [ ] ✅ Checkpoint: every window offers a path toward contact.

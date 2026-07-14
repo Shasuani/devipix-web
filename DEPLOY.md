@@ -11,7 +11,7 @@ Search `index.html` and update these (all currently placeholders):
 
 - `CONFIG.CONTACT_EMAIL` — your real email (also update the two links in the CONTACT section + `og`/canonical URLs if the domain differs)
 - Contact links: LinkedIn / GitHub URLs (CONTACT section, `href=`)
-- Project card links: `https://example.com/meridian`, `https://example.com/coolfix` → real URLs
+- Project card links: `https://example.com/meridian`, `https://example.com/fedari` → real URLs
 - JSON-LD + `og:` + `canonical` URLs: swap `devipix.com` for your domain
 - Later: `CONFIG.AI_ENDPOINT` (step 2) and `CONFIG.FORMSPREE_ID` (step 4)
 

@@ -229,19 +229,6 @@ body{
 @keyframes power-on{0%{opacity:.9}12%{opacity:.6}100%{opacity:0}}
 @keyframes blink{50%{opacity:0}}
 
-/* ---- DEBUG ---- */
-.dbg-btn{position:fixed;top:10px;right:10px;z-index:50;width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:16px;
-  color:var(--green);background:#0b1e12;border:1px solid var(--green-faint);box-shadow:0 2px 6px rgba(0,0,0,.6)}
-.dbg-btn:hover{color:#7dffa6}
-.dbg-btn:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-.dbg{position:fixed;top:52px;right:10px;z-index:50;width:250px;display:none;font-family:var(--font-body);font-size:11.5px;line-height:1.7;
-  color:var(--green-dim);background:#08130b;border:1px solid var(--green-faint);border-radius:9px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.7)}
-.dbg.open{display:block}
-.dbg h4{margin:0 0 8px;font-family:var(--font-term);font-size:16px;letter-spacing:.14em;color:var(--green)}
-.dbg b{color:var(--green)}
-.dbg .ok{color:var(--amber)}
-.dbg .warn{color:var(--red)}
-
 /* ---- RESPONSIVE / MOBILE WINDOWS ---- */
 @media (max-width:640px){
   .monitor{border-radius:18px;padding:12px}
@@ -263,9 +250,6 @@ body{
     <rect x="3" y="7" width="2" height="4"/><rect x="9" y="7" width="2" height="4"/><rect x="3" y="11" width="8" height="2"/>
   </g></symbol>
 </svg>
-
-<button class="dbg-btn" id="dbgBtn" type="button" title="Debug" aria-label="Toggle debug panel">&#9881;</button>
-<aside class="dbg" id="dbg" aria-live="polite"></aside>
 
 <main class="monitor">
   <span class="screw tl"></span><span class="screw tr"></span><span class="screw bl"></span><span class="screw br"></span>
@@ -628,38 +612,6 @@ var CONFIG = {
     var h=(location.hash||'').replace('#','');
     if(['services','projects','about','contact'].indexOf(h)!==-1)openWindow(h);
   });
-
-  /* expose for debug panel */
-  window.__devipix={winCount:function(){return winLayer.querySelectorAll('.window').length;},aiMode:function(){return aiMode;}};
-})();
-
-/* =========================================================================
-   Debug panel
-   ========================================================================= */
-(function(){
-  var BUILD={phase:"3–10 (feature-complete)",name:"windows, content, AI, form, SEO, polish",
-    done:["popup windows","draggable/bottom-sheet","4 content windows","pixel project cards","AI wiring","contact form","favicon+OG","JSON-LD Org","theme cmd","sounds toggle","deep links"],
-    next:"Fill CONFIG + placeholders, then deploy (DEPLOY.md)"};
-  var btn=document.getElementById('dbgBtn'),box=document.getElementById('dbg');
-  var reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function render(){
-    var aiSet=CONFIG.AI_ENDPOINT?'<b>set</b>':'<span class="warn">not set</span>';
-    var fsSet=CONFIG.FORMSPREE_ID?'<b>set</b>':'<span class="warn">mailto fallback</span>';
-    box.innerHTML='<h4>DEBUG</h4>'+
-      '<div>Phase: <b>'+BUILD.phase+'</b></div>'+
-      '<div style="color:var(--green-faint)">'+BUILD.done.join(' · ')+'</div>'+
-      '<div style="margin-top:6px">Next: <b>'+BUILD.next+'</b></div>'+
-      '<div style="margin-top:6px">Open windows: <b>'+(window.__devipix?window.__devipix.winCount():0)+'</b></div>'+
-      '<div>AI mode: <b>'+(window.__devipix&&window.__devipix.aiMode()?'ON':'off')+'</b></div>'+
-      '<div>Viewport: <b>'+innerWidth+'×'+innerHeight+'</b> · reduced-motion: <b>'+(reduced?'ON':'off')+'</b></div>'+
-      '<div>AI endpoint: '+aiSet+'</div>'+
-      '<div>Formspree: '+fsSet+'</div>';
-  }
-  function toggle(){box.classList.toggle('open');if(box.classList.contains('open'))render();}
-  btn.addEventListener('click',toggle);
-  if(/[?&]debug/.test(location.search))toggle();
-  addEventListener('resize',function(){if(box.classList.contains('open'))render();});
-  setInterval(function(){if(box.classList.contains('open'))render();},1000);
 })();
 </script>
 </body>

@@ -1,0 +1,22 @@
+{
+  // Run & Debug the DeviPix site from VS Code.
+  // Press F5 (or the ▶ Run and Debug button) and pick a config.
+  // Breakpoints in the inline <script> in index.html will work.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run DeviPix (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "file": "${workspaceFolder}/index.html",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Run DeviPix (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "file": "${workspaceFolder}/index.html",
+      "webRoot": "${workspaceFolder}"
+    }
+  ]
+}

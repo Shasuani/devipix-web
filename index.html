@@ -208,6 +208,10 @@ body{
   box-shadow:0 3px 0 #140e02}
 .tform .transmit:active{transform:translateY(3px);box-shadow:0 0 0 #140e02}
 .tform .status{margin-top:12px;font-size:12px;color:var(--green-dim)}
+.tform .hp{position:absolute!important;left:-9999px!important;width:1px;height:1px;opacity:0;pointer-events:none}
+.tform .cf-turnstile-slot:not(:empty){margin-top:12px}
+.privacy-note{margin-top:10px;font-size:11px;color:var(--green-dim)}
+.privacy-note a{color:var(--amber);text-decoration:none;border-bottom:1px dotted var(--amber)}
 .links-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
 .avail{margin-top:14px;font-size:11px;letter-spacing:.1em;color:var(--green);border-top:1px solid var(--green-faint);padding-top:10px}
 .avail .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:var(--glow-green);margin-right:6px}
@@ -368,8 +372,12 @@ body{
       <input id="cf-email" name="email" type="email" required>
       <label for="cf-msg">Transmission</label>
       <textarea id="cf-msg" name="message" required></textarea>
+      <!-- honeypot: bots fill this, humans never see it -->
+      <input class="hp" type="text" name="company" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="cf-turnstile-slot"></div>
       <button class="transmit" type="submit">&#9656; Transmit</button>
       <div class="status" id="cf-status"></div>
+      <p class="privacy-note">We only use your name &amp; email to reply to you &mdash; nothing else. <a href="/privacy.html" target="_blank" rel="noopener">Privacy</a>.</p>
     </form>
     <div class="links-row">
       <a href="mailto:hello@devipix.com" data-email>hello@devipix.com</a>
@@ -387,8 +395,13 @@ body{
 var CONFIG = {
   AI_ENDPOINT: "",                         // Cloudflare Worker URL (Phase 6). Empty => offline placeholder.
   FORMSPREE_ID: "",                        // e.g. "xmyzabcd" (Phase 7). Empty => mailto fallback.
-  CONTACT_EMAIL: "hello@devipix.com"       // used by mailto fallback + contact link
+  CONTACT_EMAIL: "hello@devipix.com",      // used by mailto fallback + contact link
+  TURNSTILE_SITEKEY: ""                    // Cloudflare Turnstile site key. Empty => honeypot-only.
 };
+
+/* Load Turnstile only when a site key is configured (no extra request otherwise). */
+(function(){if(CONFIG.TURNSTILE_SITEKEY){var s=document.createElement('script');
+  s.src='https://challenges.cloudflare.com/turnstile/v0/api.js';s.async=true;s.defer=true;document.head.appendChild(s);}})();
 
 /* live clock */
 (function(){var el=document.getElementById('clock');function t(){el.textContent=new Date().toLocaleTimeString('en-GB');}t();setInterval(t,1000);})();
@@ -511,12 +524,24 @@ var CONFIG = {
 
   /* ---- FORM ---- */
   function wireForm(f,statusEl){
+    var opened=Date.now();
+    // render Turnstile into this form if configured + script loaded
+    if(CONFIG.TURNSTILE_SITEKEY&&window.turnstile){
+      var slot=f.querySelector('.cf-turnstile-slot');
+      if(slot&&!slot.dataset.rendered){slot.dataset.rendered='1';try{window.turnstile.render(slot,{sitekey:CONFIG.TURNSTILE_SITEKEY,theme:'dark'});}catch(e){}}
+    }
     f.addEventListener('submit',function(e){
       e.preventDefault();
+      // spam guards: honeypot + submit-timing trap
+      var hp=f.querySelector('[name=company]');
+      if(hp&&hp.value){f.reset();statusEl.textContent='✓ Transmission received.';return;} // bot: pretend success, drop
+      if(Date.now()-opened<1500){statusEl.textContent='Give it a second, then transmit again.';return;}
       var name=f.querySelector('[name=name]').value.trim();
       var email=f.querySelector('[name=email]').value.trim();
       var msg=f.querySelector('[name=message]').value.trim();
       if(!name||!email||!msg){statusEl.textContent='All fields required.';return;}
+      if(CONFIG.TURNSTILE_SITEKEY){var tk=f.querySelector('[name="cf-turnstile-response"]');
+        if(!tk||!tk.value){statusEl.textContent='Please complete the verification.';return;}}
       if(CONFIG.FORMSPREE_ID){
         statusEl.textContent='Transmitting...';
         fetch('https://formspree.io/f/'+CONFIG.FORMSPREE_ID,{method:'POST',headers:{'Accept':'application/json'},

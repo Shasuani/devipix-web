@@ -44,6 +44,23 @@ Model is `claude-haiku-4-5` (fast/cheap), `max_tokens` 300 — change in `worker
 - **No Formspree:** leave `FORMSPREE_ID` empty — the form falls back to a `mailto:` to `CONFIG.CONTACT_EMAIL`.
 - **Advanced:** add a second route to the Worker that emails via an email API, and point the form's fetch at it.
 
+**Spam protection is already on:** the form has a hidden honeypot field + a submit-timing trap
+(no config needed — catches most bots). For stronger protection, add **Cloudflare Turnstile**:
+create a Turnstile widget in the Cloudflare dashboard, put the **site key** in
+`CONFIG.TURNSTILE_SITEKEY`, and the widget appears automatically. (To fully enforce it you
+should also verify the token server-side — do that on the Worker if you route the form through it.)
+
+---
+
+## 2b. Protect the AI endpoint (important — it spends money)
+
+The Worker holds your Anthropic key, so a public, unprotected endpoint can run up a bill:
+
+- Keep the Anthropic **spend limit** on (step 1).
+- Set `ALLOWED_ORIGIN` to your domain — the Worker now **rejects other origins** (403).
+- Add a **Cloudflare Rate Limiting rule** on the Worker route for durable protection. The
+  in-Worker limiter is best-effort (per-isolate, resets) — fine as a backstop, not as your only line.
+
 ---
 
 ## 3. Deploy the site (Cloudflare Pages)
@@ -55,21 +72,30 @@ Model is `claude-haiku-4-5` (fast/cheap), `max_tokens` 300 — change in `worker
 
 ---
 
-## 4. OG image (optional but recommended)
+## 4. Included files (upload the whole folder to Pages)
 
-`index.html` references `og.png` for social previews. Generate a 1200×630 screenshot of
-the booted terminal (this is where DeviPix **blue** brand can appear as a border/frame),
-save as `og.png`, and upload it alongside `index.html` on Pages.
+Cloudflare Pages serves the entire folder, so all of these ship automatically:
+
+- `index.html` — the site
+- `og.png` — 1200×630 social preview card (already generated, DeviPix-blue framed)
+- `privacy.html` — privacy policy (linked from the contact form)
+- `404.html` — themed not-found page (Pages serves it automatically)
+- `robots.txt` + `sitemap.xml` — SEO (update the domain inside both if it isn't `devipix.com`)
+
+`worker.js` is **not** part of the site upload — it's deployed separately as the Worker (step 1).
 
 ---
 
 ## 5. Launch checklist
 
-- [ ] Placeholders filled (email, links, project URLs, domain)
+- [ ] Placeholders filled (email, links, project URLs, domain in index/privacy/robots/sitemap)
 - [ ] Worker deployed + `ANTHROPIC_API_KEY` secret set + spend limit on
 - [ ] `CONFIG.AI_ENDPOINT` points at the Worker; `curl` test passes
-- [ ] `ALLOWED_ORIGIN` locked to the real domain
-- [ ] Contact form verified (Formspree or mailto)
+- [ ] `ALLOWED_ORIGIN` locked to the real domain (Worker now 403s other origins)
+- [ ] Cloudflare Rate Limiting rule added on the Worker route
+- [ ] Contact form verified (Formspree or mailto); honeypot works; Turnstile optional
+- [ ] Privacy page reachable; `/privacy.html` link works
+- [ ] `robots.txt` + `sitemap.xml` domain is correct; `404.html` shows on a bad URL
 - [ ] Site on custom domain, HTTPS green
 - [ ] Favicon shows; OG preview looks right (test with a link unfurl)
 - [ ] Mobile: bottom-sheet windows + swipe-to-close work

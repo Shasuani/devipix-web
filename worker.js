@@ -66,6 +66,14 @@ export default {
     if (request.method === "OPTIONS") return new Response(null, { headers: cors() });
     if (request.method !== "POST") return json({ error: "POST only" }, 405);
 
+    // Reject requests from other origins once ALLOWED_ORIGIN is locked to your domain.
+    // (Cheap first line of defense; add a Cloudflare Rate Limiting rule on this route
+    //  for durable protection — the in-memory limiter below is per-isolate/best-effort.)
+    const origin = request.headers.get("Origin") || "";
+    if (ALLOWED_ORIGIN !== "*" && origin && origin !== ALLOWED_ORIGIN) {
+      return json({ error: "Forbidden origin" }, 403);
+    }
+
     const ip = request.headers.get("CF-Connecting-IP") || "0.0.0.0";
     if (rateLimited(ip)) return json({ error: "Slow down — try again in a minute." }, 429);
 

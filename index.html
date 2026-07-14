@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DeviPix — Websites, Apps &amp; AI Tools</title>
+<meta name="description" content="DeviPix builds premium websites, full-stack web &amp; mobile apps, and AI-powered tools. Talk to the people who write the code.">
+
+<!-- Fonts: VT323 (terminal/headings), IBM Plex Mono 400/600 (body) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=VT323&display=swap" rel="stylesheet">
+
+<style>
+/* =========================================================================
+   DeviPix — Phase 1: CRT shell + design system
+   Single file, no framework, no build step.
+   ========================================================================= */
+
+:root{
+  /* phosphor palette */
+  --green:        #33ff66;
+  --green-dim:    #1e9c43;
+  --green-faint:  #12592a;
+  --amber:        #ffb000;
+  --red:          #ff4e42;
+
+  /* tube + bezel */
+  --tube:         #071008;
+  --tube-edge:    #04120a;
+  --bezel-1:      #221d17;
+  --bezel-2:      #17130f;
+  --bezel-3:      #0c0a08;
+
+  /* glow tokens */
+  --glow-green:   0 0 6px rgba(51,255,102,.55), 0 0 20px rgba(51,255,102,.18);
+  --glow-amber:   0 0 6px rgba(255,176,0,.55),  0 0 18px rgba(255,176,0,.18);
+
+  --font-term: "VT323", ui-monospace, monospace;
+  --font-body: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{
+  background:#050403;
+  background:radial-gradient(120% 120% at 50% 30%, #0a0806 0%, #050403 70%);
+  font-family:var(--font-body);
+  color:var(--green);
+  display:flex;align-items:center;justify-content:center;
+  padding:clamp(8px,2.5vw,40px);
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+
+/* ---- MONITOR (bezel + screws + brand plate) ------------------------------ */
+.monitor{
+  position:relative;
+  width:min(1080px, 100%);
+  height:min(720px, calc(100dvh - 24px));
+  border-radius:26px;
+  padding:clamp(14px,2.2vw,30px);
+  background:
+    linear-gradient(160deg, var(--bezel-1), var(--bezel-2) 55%, var(--bezel-3));
+  box-shadow:
+    inset 0 2px 3px rgba(255,255,255,.05),
+    inset 0 -3px 8px rgba(0,0,0,.7),
+    0 30px 70px rgba(0,0,0,.75),
+    0 4px 12px rgba(0,0,0,.6);
+  display:flex;flex-direction:column;
+}
+
+/* corner screws */
+.screw{
+  position:absolute;width:15px;height:15px;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #4a4038, #1a1512 70%);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.15), inset 0 -1px 2px rgba(0,0,0,.8), 0 1px 1px rgba(0,0,0,.5);
+}
+.screw::after{ /* slot */
+  content:"";position:absolute;inset:0;margin:auto;width:9px;height:2px;border-radius:1px;
+  background:linear-gradient(#0a0806,#2a231d);transform:rotate(35deg);
+}
+.screw.tl{top:10px;left:10px} .screw.tr{top:10px;right:10px}
+.screw.bl{bottom:10px;left:10px} .screw.br{bottom:10px;right:10px}
+
+/* brand plate under the screen */
+.plate{
+  flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  padding-top:clamp(8px,1.4vw,14px);
+}
+.plate .logo{width:18px;height:18px;color:var(--green-dim);filter:drop-shadow(0 0 4px rgba(51,255,102,.4))}
+.plate .name{
+  font-family:var(--font-term);font-size:20px;letter-spacing:.32em;
+  color:#6a5f52;text-transform:uppercase;padding-left:.1em;
+}
+.led{
+  width:9px;height:9px;border-radius:50%;margin-left:6px;
+  background:var(--green);box-shadow:var(--glow-green);
+}
+
+/* ---- SCREEN (the CRT tube) ----------------------------------------------- */
+.screen{
+  position:relative;flex:1 1 auto;min-height:0;
+  border-radius:16px/20px;
+  background:
+    radial-gradient(120% 130% at 50% 45%, var(--tube) 60%, var(--tube-edge) 100%);
+  box-shadow:
+    inset 0 0 22px rgba(0,0,0,.9),
+    inset 0 0 90px rgba(0,0,0,.55),
+    0 0 0 2px #05100a;
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+
+/* screen content sits above the effect overlays */
+.crt-content{position:relative;z-index:2;display:flex;flex-direction:column;height:100%;min-height:0}
+
+/* scanlines */
+.screen::before{
+  content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(0,0,0,.22) 0 1px, transparent 1px 3px);
+  mix-blend-mode:multiply;
+}
+/* vignette + refresh band live here */
+.fx{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden;border-radius:inherit}
+.fx .vignette{position:absolute;inset:0;
+  background:radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,.55) 100%);}
+.fx .band{position:absolute;left:0;right:0;height:40%;
+  background:linear-gradient(180deg, transparent, rgba(51,255,102,.05) 50%, transparent);}
+
+/* power-on flash */
+.flash{position:absolute;inset:0;z-index:9;background:#eafff0;pointer-events:none;opacity:0}
+
+/* ---- HEADER STRIP -------------------------------------------------------- */
+.topbar{
+  flex:0 0 auto;display:flex;align-items:center;gap:12px;
+  padding:10px clamp(12px,2vw,20px);
+  border-bottom:1px solid rgba(51,255,102,.18);
+  font-family:var(--font-term);
+}
+.topbar .logo{width:22px;height:22px;color:var(--green);filter:drop-shadow(0 0 5px rgba(51,255,102,.6))}
+.topbar .os{font-size:22px;letter-spacing:.14em;text-shadow:var(--glow-green)}
+.topbar .clock{
+  margin-left:auto;font-size:20px;color:var(--green-dim);letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ---- TERMINAL BODY (placeholder in Phase 1) ------------------------------ */
+.terminal{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+  padding:clamp(14px,2vw,22px);
+  font-size:15px;line-height:1.55;text-shadow:var(--glow-green);
+  scrollbar-width:thin;scrollbar-color:var(--green-faint) transparent;
+}
+.terminal::-webkit-scrollbar{width:8px}
+.terminal::-webkit-scrollbar-thumb{background:var(--green-faint);border-radius:4px}
+.terminal .dim{color:var(--green-dim)}
+.terminal .amber{color:var(--amber);text-shadow:var(--glow-amber)}
+.terminal .line{margin:0 0 3px}
+.blink{display:inline-block;width:9px;height:1.05em;background:var(--green);
+  vertical-align:-2px;box-shadow:var(--glow-green)}
+
+/* ---- KEYCAP BUTTON BAR --------------------------------------------------- */
+.keys{
+  flex:0 0 auto;display:flex;flex-wrap:wrap;gap:9px;
+  padding:12px clamp(12px,2vw,20px);
+  border-top:1px solid rgba(51,255,102,.18);
+}
+.key{
+  font-family:var(--font-body);font-size:12.5px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;cursor:pointer;
+  color:var(--green);
+  background:linear-gradient(180deg,#123420,#0b1e12);
+  border:1px solid var(--green-faint);border-radius:7px;
+  padding:9px 14px;
+  box-shadow:inset 0 1px 0 rgba(120,255,170,.18), 0 3px 0 #061109, 0 5px 8px rgba(0,0,0,.5);
+  transition:transform .05s ease, box-shadow .05s ease, color .15s ease;
+}
+.key:hover{color:#7dffa6}
+.key:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(120,255,170,.18), 0 0 0 #061109}
+.key:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.key.accent{
+  color:var(--amber);border-color:rgba(255,176,0,.4);
+  background:linear-gradient(180deg,#3a2a08,#241a05);
+  box-shadow:inset 0 1px 0 rgba(255,210,120,.2), 0 3px 0 #140e02, 0 5px 8px rgba(0,0,0,.5);
+}
+.key.accent:hover{color:#ffd166}
+.key.accent:active{transform:translateY(3px);box-shadow:inset 0 1px 0 rgba(255,210,120,.2), 0 0 0 #140e02}
+.key.accent:focus-visible{outline-color:var(--amber)}
+
+/* ---- MOTION -------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference){
+  .led{animation:led-pulse 2.4s ease-in-out infinite}
+  .screen{animation:flicker 6s steps(60) infinite}
+  .fx .band{animation:refresh 7s linear infinite}
+  .flash{animation:power-on 1.1s ease-out forwards}
+  .blink{animation:blink 1.06s steps(1) infinite}
+}
+@keyframes led-pulse{0%,100%{opacity:1}50%{opacity:.45}}
+@keyframes flicker{0%,100%{opacity:1}96%{opacity:1}97%{opacity:.97}98%{opacity:1}99%{opacity:.98}}
+@keyframes refresh{0%{transform:translateY(-45%)}100%{transform:translateY(255%)}}
+@keyframes power-on{0%{opacity:.9}12%{opacity:.6}100%{opacity:0}}
+@keyframes blink{50%{opacity:0}}
+
+/* ---- RESPONSIVE ---------------------------------------------------------- */
+@media (max-width:640px){
+  .monitor{border-radius:18px;padding:12px}
+  .topbar .os{font-size:18px}
+  .topbar .clock{font-size:16px}
+  .terminal{font-size:14px}
+}
+</style>
+</head>
+<body>
+
+<!-- reusable Pixel Frame logo (16x16 grid) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo-mark" viewBox="0 0 16 16">
+    <g fill="currentColor" shape-rendering="crispEdges">
+      <!-- spawning sub-pixel -->
+      <rect x="12" y="2" width="2" height="2"/>
+      <!-- frame: top bar -->
+      <rect x="3" y="5" width="8" height="2"/>
+      <!-- frame: sides -->
+      <rect x="3" y="7" width="2" height="4"/>
+      <rect x="9" y="7" width="2" height="4"/>
+      <!-- frame: bottom bar -->
+      <rect x="3" y="11" width="8" height="2"/>
+    </g>
+  </symbol>
+</svg>
+
+<main class="monitor">
+  <span class="screw tl"></span><span class="screw tr"></span>
+  <span class="screw bl"></span><span class="screw br"></span>
+
+  <section class="screen" aria-label="DeviPix terminal">
+    <div class="crt-content">
+
+      <!-- header strip -->
+      <header class="topbar">
+        <svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg>
+        <span class="os">DEVIPIX OS v3.0</span>
+        <span class="clock" id="clock" aria-hidden="true">--:--:--</span>
+      </header>
+
+      <!-- terminal body (Phase 1 placeholder — the engine arrives in Phase 2) -->
+      <div class="terminal" id="terminal">
+        <p class="line dim">DEVIPIX LABS (TM) UNIFIED OPERATING SYSTEM</p>
+        <p class="line dim">COPYRIGHT 2019-2026 &nbsp; ALL RIGHTS RESERVED</p>
+        <p class="line">&nbsp;</p>
+        <p class="line">INITIALIZING SYSTEM....................... <span class="amber">OK</span></p>
+        <p class="line">LOADING AI CO-PROCESSOR................... <span class="amber">OK</span></p>
+        <p class="line">&nbsp;</p>
+        <p class="line">DEVIPIX &mdash; FULL-STACK WEB &middot; APPS &middot; AI</p>
+        <p class="line dim">We build websites, apps and AI-powered tools for people who want them done properly.</p>
+        <p class="line">&nbsp;</p>
+        <p class="line dim">&gt; <span class="blink"></span></p>
+      </div>
+
+      <!-- keycap buttons -->
+      <nav class="keys" aria-label="Terminal commands">
+        <button class="key" type="button">Services</button>
+        <button class="key" type="button">Projects</button>
+        <button class="key" type="button">About</button>
+        <button class="key accent" type="button">Ask AI &#9670;</button>
+        <button class="key accent" type="button">Contact &#9656;</button>
+      </nav>
+
+    </div><!-- /crt-content -->
+
+    <!-- effect overlays -->
+    <div class="fx"><div class="vignette"></div><div class="band"></div></div>
+    <div class="flash"></div>
+  </section>
+
+  <!-- brand plate -->
+  <div class="plate">
+    <svg class="logo" aria-hidden="true"><use href="#logo-mark"/></svg>
+    <span class="name">DeviPix</span>
+    <span class="led" aria-hidden="true"></span>
+  </div>
+</main>
+
+<script>
+/* live clock — en-GB, 1s tick */
+(function(){
+  var el = document.getElementById('clock');
+  function tick(){
+    el.textContent = new Date().toLocaleTimeString('en-GB');
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+
+</body>
+</html>

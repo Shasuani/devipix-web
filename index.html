@@ -160,6 +160,22 @@ body{
 .terminal .line{margin:0 0 3px}
 .blink{display:inline-block;width:9px;height:1.05em;background:var(--green);
   vertical-align:-2px;box-shadow:var(--glow-green)}
+.terminal .out-line{margin:0 0 3px;white-space:pre-wrap;word-break:break-word}
+.terminal .cmd-echo{color:var(--green)}
+.terminal .err{color:var(--red);text-shadow:0 0 6px rgba(255,78,66,.5)}
+.terminal .ai-reply{color:var(--amber);text-shadow:var(--glow-amber);
+  border-left:2px solid var(--amber);padding-left:10px;margin:4px 0 6px}
+.terminal .hint b{color:var(--green);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.terminal .hint b:hover{color:#7dffa6}
+/* prompt row */
+.promptRow{display:flex;align-items:baseline;position:relative;cursor:text}
+.promptRow .ps1{color:var(--green);margin-right:8px}
+.promptRow.ai .ps1{color:var(--amber);text-shadow:var(--glow-amber)}
+.promptRow.ai{color:var(--amber)}
+.promptRow .typed{white-space:pre-wrap;word-break:break-word}
+.promptRow #cmd{position:absolute;left:0;top:0;width:100%;height:100%;
+  opacity:0;border:0;padding:0;margin:0;font-size:16px;/* 16px = no iOS zoom */
+  background:transparent;color:transparent;caret-color:transparent}
 
 /* ---- KEYCAP BUTTON BAR --------------------------------------------------- */
 .keys{
@@ -264,27 +280,25 @@ body{
         <span class="clock" id="clock" aria-hidden="true">--:--:--</span>
       </header>
 
-      <!-- terminal body (Phase 1 placeholder — the engine arrives in Phase 2) -->
+      <!-- terminal body -->
       <div class="terminal" id="terminal">
-        <p class="line dim">DEVIPIX LABS (TM) UNIFIED OPERATING SYSTEM</p>
-        <p class="line dim">COPYRIGHT 2019-2026 &nbsp; ALL RIGHTS RESERVED</p>
-        <p class="line">&nbsp;</p>
-        <p class="line">INITIALIZING SYSTEM....................... <span class="amber">OK</span></p>
-        <p class="line">LOADING AI CO-PROCESSOR................... <span class="amber">OK</span></p>
-        <p class="line">&nbsp;</p>
-        <p class="line">DEVIPIX &mdash; FULL-STACK WEB &middot; APPS &middot; AI</p>
-        <p class="line dim">We build websites, apps and AI-powered tools for people who want them done properly.</p>
-        <p class="line">&nbsp;</p>
-        <p class="line dim">&gt; <span class="blink"></span></p>
+        <div id="out" aria-live="polite"></div>
+        <div class="promptRow" id="promptRow" hidden>
+          <span class="ps1" id="ps1">&gt;</span>
+          <span class="typed" id="typed"></span><span class="blink" id="cur"></span>
+          <input id="cmd" type="text" autocomplete="off" autocapitalize="off"
+                 autocorrect="off" spellcheck="false" aria-label="Terminal input">
+        </div>
       </div>
 
       <!-- keycap buttons -->
       <nav class="keys" aria-label="Terminal commands">
-        <button class="key" type="button">Services</button>
-        <button class="key" type="button">Projects</button>
-        <button class="key" type="button">About</button>
-        <button class="key accent" type="button">Ask AI &#9670;</button>
-        <button class="key accent" type="button">Contact &#9656;</button>
+        <button class="key" type="button" data-cmd="services">Services</button>
+        <button class="key" type="button" data-cmd="projects">Projects</button>
+        <button class="key" type="button" data-cmd="about">About</button>
+        <button class="key" type="button" data-cmd="help">Help</button>
+        <button class="key accent" type="button" data-ai="1">Ask AI &#9670;</button>
+        <button class="key accent" type="button" data-cmd="contact">Contact &#9656;</button>
       </nav>
 
     </div><!-- /crt-content -->
@@ -313,11 +327,183 @@ body{
   setInterval(tick, 1000);
 })();
 
+/* =========================================================================
+   Phase 2 — terminal engine
+   ========================================================================= */
+(function(){
+  var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var out = document.getElementById('out');
+  var term = document.getElementById('terminal');
+  var row = document.getElementById('promptRow');
+  var ps1 = document.getElementById('ps1');
+  var typed = document.getElementById('typed');
+  var input = document.getElementById('cmd');
+
+  var history = [], hIdx = 0, aiMode = false;
+  var COMMANDS = ['services','projects','about','contact','ask','help','clear','exit'];
+
+  /* ---- output helpers ---- */
+  function el(cls, html){
+    var d = document.createElement('div');
+    d.className = 'out-line' + (cls ? ' ' + cls : '');
+    d.innerHTML = html; out.appendChild(d);
+    term.scrollTop = term.scrollHeight; return d;
+  }
+  function print(html, cls){ return el(cls, html); }
+  function scroll(){ term.scrollTop = term.scrollHeight; }
+  var esc = function(s){ return s.replace(/[&<>]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c]; }); };
+
+  /* typewriter: print lines one char burst at a time (instant if reduced-motion) */
+  function type(lines, done){
+    if(REDUCED){ lines.forEach(function(l){ el(l.cls, l.html); }); done && done(); return; }
+    var i = 0;
+    (function nextLine(){
+      if(i >= lines.length){ done && done(); return; }
+      var l = lines[i++], d = el(l.cls, ''), full = l.html, j = 0;
+      (function nextChar(){
+        // reveal in small chunks for speed
+        j += 2; d.innerHTML = full.slice(0, j); scroll();
+        if(j < full.length){ setTimeout(nextChar, 8); }
+        else { d.innerHTML = full; setTimeout(nextLine, l.pause || 60); }
+      })();
+    })();
+  }
+
+  /* ---- boot sequence ---- */
+  var boot = [
+    {cls:'dim', html:'DEVIPIX LABS (TM) UNIFIED OPERATING SYSTEM'},
+    {cls:'dim', html:'COPYRIGHT 2019-2026 &nbsp; ALL RIGHTS RESERVED', pause:180},
+    {cls:'', html:'&nbsp;'},
+    {cls:'', html:'INITIALIZING SYSTEM....................... <span class="amber">OK</span>'},
+    {cls:'', html:'LOADING AI CO-PROCESSOR................... <span class="amber">OK</span>', pause:160},
+    {cls:'', html:'&nbsp;'},
+    {cls:'', html:'DEVIPIX &mdash; FULL-STACK WEB &middot; APPS &middot; AI'},
+    {cls:'dim', html:'We build websites, apps and AI-powered tools for people who want them done properly.', pause:160},
+    {cls:'', html:'&nbsp;'},
+    {cls:'hint', html:'Type a command or tap a key: '+
+      ['services','projects','about','contact'].map(function(c){
+        return '<b data-run="'+c+'">'+c+'</b>'; }).join(' &middot; ')+
+      ' &middot; or <b data-ai="1">ask the AI &#9670;</b>'}
+  ];
+
+  /* ---- prompt rendering ---- */
+  function render(){
+    typed.textContent = input.value;
+    ps1.textContent = aiMode ? 'AI>' : '>';
+  }
+  function focusInput(){ input.focus({preventScroll:true}); }
+  function setAI(on){
+    aiMode = on; row.classList.toggle('ai', on); render();
+    print(on ? 'AI co-processor online. Ask anything about services, process, or pricing. (ESC to exit)'
+             : 'Exited AI mode.', on ? 'ai-reply' : 'dim');
+  }
+
+  /* ---- command handling ---- */
+  function aiReply(q){
+    // Placeholder until Phase 6 wires the Cloudflare Worker + Anthropic API.
+    print('PROCESSING...', 'dim');
+    setTimeout(function(){
+      out.lastChild.remove();
+      print('[ AI offline &mdash; the live assistant is wired in Phase 6. '+
+            'For now: projects are quoted individually; tap CONTACT to start one. ]', 'ai-reply');
+    }, 400);
+  }
+
+  var HANDLERS = {
+    help: function(){
+      print('AVAILABLE COMMANDS', 'amber');
+      print('  services   projects   about   contact');
+      print('  ask &lt;question&gt;   help   clear   exit');
+      print('  <span class="dim">history: &uarr;/&darr; &middot; autocomplete: Tab &middot; close/exit: ESC</span>');
+    },
+    services: function(){ stub('SERVICES.MD'); },
+    projects: function(){ stub('~/PROJECTS'); },
+    about:    function(){ stub('ABOUT.TXT'); },
+    contact:  function(){ stub('NEW TRANSMISSION'); },
+    clear:    function(){ out.innerHTML = ''; },
+    ask:      function(arg){ if(arg){ aiReply(arg); } else { setAI(true); } },
+    exit:     function(){ if(aiMode) setAI(false); else print('Nothing to exit.', 'dim'); },
+    // easter eggs
+    whoami:   function(){ print('guest@devipix &mdash; a potential client with good taste.'); },
+    ls:       function(){ print('services.md  projects/  about.txt  contact.form  <span class="dim">.vault</span>'); },
+    'cat .vault': function(){
+      print('ACCESSING .vault ...', 'dim');
+      setTimeout(function(){ print('&#9888; ACCESS DENIED &mdash; nice try. Lockout engaged for 0.0 seconds.', 'err'); }, 350);
+    },
+    'sudo hire-me': function(){ print('Elevating privileges... granted.', 'amber'); stub('NEW TRANSMISSION'); }
+  };
+  function stub(name){
+    print('opening [ '+name+' ] ...', 'dim');
+    print('<span class="dim">window UI arrives in Phase 3 &mdash; content is being wired.</span>');
+  }
+
+  function run(raw){
+    var line = (raw||'').trim();
+    // echo
+    print('<span class="'+(aiMode?'':'cmd-echo')+'">'+(aiMode?'AI&gt; ':'&gt; ')+esc(line)+'</span>');
+    if(line){ history.push(line); hIdx = history.length; }
+
+    if(aiMode){
+      if(line.toLowerCase() === 'exit' || line.toLowerCase() === 'quit'){ setAI(false); return; }
+      if(line) aiReply(line);
+      return;
+    }
+    if(!line) return;
+
+    var lower = line.toLowerCase();
+    var sp = lower.indexOf(' ');
+    var cmd = sp === -1 ? lower : lower.slice(0, sp);
+    var arg = sp === -1 ? '' : line.slice(sp+1).trim();
+
+    if(HANDLERS[lower]) return HANDLERS[lower]();          // exact (eggs w/ spaces)
+    if(HANDLERS[cmd])   return HANDLERS[cmd](arg);         // command + arg
+
+    // natural-language routing: 3+ words or a question mark => AI
+    if(lower.indexOf('?') !== -1 || line.split(/\s+/).length >= 3){ return aiReply(line); }
+
+    print('UNKNOWN COMMAND: '+esc(cmd)+'  <span class="dim">(try `help`)</span>', 'err');
+  }
+
+  /* ---- input events ---- */
+  input.addEventListener('input', render);
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); var v = input.value; input.value=''; render(); run(v); }
+    else if(e.key === 'ArrowUp'){ e.preventDefault(); if(hIdx>0){ hIdx--; input.value=history[hIdx]||''; render(); } }
+    else if(e.key === 'ArrowDown'){ e.preventDefault(); if(hIdx<history.length){ hIdx++; input.value=history[hIdx]||''; render(); } }
+    else if(e.key === 'Tab'){ e.preventDefault();
+      var p = input.value.toLowerCase(), m = COMMANDS.filter(function(c){ return c.indexOf(p)===0; });
+      if(m.length===1){ input.value = m[0]; render(); }
+      else if(m.length>1){ print(m.join('   '), 'dim'); }
+    }
+    else if(e.key === 'Escape'){ if(aiMode){ setAI(false); input.value=''; render(); } }
+  });
+
+  // focus behavior: tap prompt row, or any printable key on desktop
+  row.addEventListener('click', focusInput);
+  term.addEventListener('click', function(e){ if(!e.target.closest('.hint')) focusInput(); });
+  document.addEventListener('keydown', function(e){
+    if(e.target === input) return;
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    if(e.key.length === 1){ focusInput(); }
+  });
+
+  // clickable hint words + keycaps + Ask-AI button
+  document.addEventListener('click', function(e){
+    var r = e.target.closest('[data-run]'); if(r){ run(r.getAttribute('data-run')); focusInput(); return; }
+    var a = e.target.closest('[data-ai]'); if(a){ if(!aiMode) setAI(true); focusInput(); return; }
+    var k = e.target.closest('[data-cmd]'); if(k){ run(k.getAttribute('data-cmd')); focusInput(); }
+  });
+
+  /* ---- go ---- */
+  type(boot, function(){ row.hidden = false; render(); focusInput(); });
+})();
+
 /* debug panel — build/phase status. Toggle with the gear button or ?debug in the URL */
 (function(){
-  var BUILD = { phase: 1, name: "CRT shell + design system",
-    done: ["frame+screws","brand plate+LED","header clock","CRT effects","keycaps","Pixel Frame logo"],
-    next: "Phase 2 — terminal engine" };
+  var BUILD = { phase: 2, name: "terminal engine",
+    done: ["typewriter boot","live input+cursor","commands","↑/↓ history","Tab autocomplete","ESC","easter eggs","NL→AI routing"],
+    next: "Phase 3 — windows (popup panels)" };
   var btn = document.getElementById('dbgBtn'), box = document.getElementById('dbg');
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   function render(){

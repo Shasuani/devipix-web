@@ -512,7 +512,7 @@ var CONFIG = {
     var proc=print('PROCESSING...','dim');
     if(!CONFIG.AI_ENDPOINT){
       setTimeout(function(){proc.remove();
-        print('[ AI is not wired yet. Add your Cloudflare Worker URL to CONFIG.AI_ENDPOINT (see DEPLOY.md). Projects are quoted individually &mdash; tap CONTACT to start one. ]','ai-reply');},400);
+        print('[ The AI co-processor is coming online soon. In the meantime, tell DeviPix what you need via CONTACT &mdash; a real person replies within one business day. ]','ai-reply');},400);
       return;
     }
     fetch(CONFIG.AI_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:aiHistory})})
